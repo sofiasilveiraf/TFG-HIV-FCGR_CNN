@@ -11,9 +11,6 @@ Genera:
 - Un CSV con columnas: id, png_path, label
  que usaremos para el Dataset y para hacer los splits.
 """
-#!/usr/bin/env python3
-
-# -*- coding: utf-8 -*-
 
 import argparse
 
