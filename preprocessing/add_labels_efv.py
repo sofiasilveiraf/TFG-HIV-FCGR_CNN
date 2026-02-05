@@ -1,7 +1,3 @@
-#!/usr/bin/env python3
-
-# -*- coding: utf-8 -*-
-
 """
 
 add_labels_efv.py
