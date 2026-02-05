@@ -1,9 +1,4 @@
-#!/usr/bin/env python3
-
-# -*- coding: utf-8 -*-
-
 """
-
 Genera imágenes FCGR para cada secuencia (dos variantes por fila):
 
 - FCGR usando la secuencia completa (columna Sequence_512)
@@ -21,11 +16,9 @@ Ejemplo de uso:
         --outdir data/fcgr_images \
 
         --res 200
-
 """
 
 from __future__ import annotations
-
 import argparse
 
 from math import pi, sin
