@@ -32,8 +32,8 @@ El conjunto de datos utilizado se obtuvo de la Stanford HIV Drug Resistance Data
 
 ## Estructura del repositorio
 
-- `data/` → datasets procesados y representaciones FCGR
-- `src/` → scripts de procesamiento, entrenamiento y evaluación
+- `data/` → representaciones FCGR utilizadas durante los experimentos
+- `src/` → scripts de preprocesamiento, generación FCGR y entrenamiento
 - `models/` → modelos entrenados y checkpoints
 - `results/` → métricas, gráficas y figuras obtenidas
 
@@ -70,17 +70,18 @@ Instalación de dependencias:
 pip install -r requirements.txt
 ```
 
+Generación de representaciones FCGR:
+
+```bash
+python src/fcgr/generate_fcgr_images.py
+```
+
 Entrenamiento del modelo:
 
 ```bash
-python train_model.py
+python src/training/train_cnn.py
 ```
 
-Evaluación del modelo:
-
-```bash
-python evaluate_model.py
-```
 ---
 
 ## Referencia metodológica
@@ -92,6 +93,7 @@ La implementación de las representaciones FCGR se basa en el trabajo:
 > Bioinformatics, 36(1), 272–279.
 
 https://doi.org/10.1093/bioinformatics/btz493
+
 ---
 
 ## Autora
