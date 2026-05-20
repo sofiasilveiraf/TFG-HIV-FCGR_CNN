@@ -1,1 +1,0 @@
-Figuras generadas
