@@ -1,61 +1,158 @@
-# Importing dependencies
+# ============================================================
+# IMPORTACIÓN DE LIBRERÍAS
+# ============================================================
+
 import torch
 from PIL import Image
-from torch import nn,save,load
+from torch import nn, save, load
 from torch.optim import Adam
 from torch.utils.data import DataLoader
-from torchvision import datasets, transforms
-
-# Loading Data (simple, usando ImageFolder y la estructura 0/1)
 from torchvision import transforms
 from torchvision.datasets import ImageFolder
-from torch.utils.data import DataLoader
-# 1. Transformaciones básicas
+
+
+# ============================================================
+# PARÁMETROS DEL PROYECTO
+# ============================================================
+
+IMAGE_SIZE = 512
+
+INPUT_CHANNELS = 3
+
+CONV1_FILTERS = 16
+CONV2_FILTERS = 32
+CONV3_FILTERS = 64
+CONV4_FILTERS = 128
+
+KERNEL_SIZE = 3
+PADDING = 1
+POOL_SIZE = 2
+
+HIDDEN_NEURONS = 64
+N_CLASSES = 2
+
+BATCH_SIZE = 32
+LEARNING_RATE = 0.001
+N_EPOCHS = 10
+
+
+# ============================================================
+# TRANSFORMACIONES DE IMAGEN
+# ============================================================
+
 transform = transforms.Compose([
-   transforms.Resize((512, 512)),   # ajustamos a 512x512
-   transforms.ToTensor()
+    transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+    transforms.ToTensor()
 ])
-# 2. Rutas a tus carpetas ya creadas
+
+
+# ============================================================
+# RUTAS DE LOS DATOS
+# ============================================================
+
 TRAIN_DIR = "../data/fcgr_512_by_classes/train"
-VAL_DIR   = "../data/fcgr_512_by_classes/val"
-TEST_DIR  = "../data/fcgr_512_by_classes/test"
-# 3. Crear datasets
-train_dataset = ImageFolder(root=TRAIN_DIR, transform=transform)
-val_dataset   = ImageFolder(root=VAL_DIR,   transform=transform)
-test_dataset  = ImageFolder(root=TEST_DIR,  transform=transform)
-# 4. Dataloaders para la CNN
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-val_loader   = DataLoader(val_dataset,   batch_size=32, shuffle=False)
-test_loader  = DataLoader(test_dataset,  batch_size=32, shuffle=False)
+VAL_DIR = "../data/fcgr_512_by_classes/val"
+TEST_DIR = "../data/fcgr_512_by_classes/test"
 
 
-# Define the image classifier model
-import torch.nn as nn
+# ============================================================
+# DATASETS
+# ============================================================
+
+train_dataset = ImageFolder(
+    root=TRAIN_DIR,
+    transform=transform
+)
+
+val_dataset = ImageFolder(
+    root=VAL_DIR,
+    transform=transform
+)
+
+test_dataset = ImageFolder(
+    root=TEST_DIR,
+    transform=transform
+)
+
+
+# ============================================================
+# DATALOADERS
+# ============================================================
+
+train_loader = DataLoader(
+    train_dataset,
+    batch_size=BATCH_SIZE,
+    shuffle=True
+)
+
+val_loader = DataLoader(
+    val_dataset,
+    batch_size=BATCH_SIZE,
+    shuffle=False
+)
+
+test_loader = DataLoader(
+    test_dataset,
+    batch_size=BATCH_SIZE,
+    shuffle=False
+)
+
+
+# ============================================================
+# DEFINICIÓN DE LA CNN
+# ============================================================
 
 class ImageClassifier(nn.Module):
+
     def __init__(self):
         super().__init__()
+
+        # Capas convolucionales
         self.conv_layers = nn.Sequential(
-            nn.Conv2d(3, 16, kernel_size=3, padding=1),
+
+            nn.Conv2d(
+                INPUT_CHANNELS,
+                CONV1_FILTERS,
+                kernel_size=KERNEL_SIZE,
+                padding=PADDING
+            ),
             nn.ReLU(),
-            nn.MaxPool2d(2),   # 512 → 256
-            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.MaxPool2d(POOL_SIZE),
+
+            nn.Conv2d(
+                CONV1_FILTERS,
+                CONV2_FILTERS,
+                kernel_size=KERNEL_SIZE,
+                padding=PADDING
+            ),
             nn.ReLU(),
-            nn.MaxPool2d(2),   # 256 → 128
-            nn.Conv2d(32, 64, kernel_size=3, padding=1),
+            nn.MaxPool2d(POOL_SIZE),
+
+            nn.Conv2d(
+                CONV2_FILTERS,
+                CONV3_FILTERS,
+                kernel_size=KERNEL_SIZE,
+                padding=PADDING
+            ),
             nn.ReLU(),
-            nn.MaxPool2d(2),   # 128 → 64
-            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.MaxPool2d(POOL_SIZE),
+
+            nn.Conv2d(
+                CONV3_FILTERS,
+                CONV4_FILTERS,
+                kernel_size=KERNEL_SIZE,
+                padding=PADDING
+            ),
             nn.ReLU(),
-            nn.MaxPool2d(2)    # 64 → 32
+            nn.MaxPool2d(POOL_SIZE)
         )
 
-        # 128 filtros, 32x32 tamaño final
+        # Capas fully connected
         self.fc_layers = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(128 * 32 * 32, 64),
+            nn.Linear(CONV4_FILTERS * 32 * 32, HIDDEN_NEURONS),
             nn.ReLU(),
-            nn.Linear(64, 2)   # salida = 2 clases (0 y 1)
+            nn.Linear(HIDDEN_NEURONS, N_CLASSES)
         )
 
     def forward(self, x):
@@ -64,47 +161,86 @@ class ImageClassifier(nn.Module):
         return x
 
 
-# Create an instance of the image classifier model 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# ============================================================
+# INICIALIZACIÓN DEL MODELO
+# ============================================================
+
+device = torch.device(
+    "cuda" if torch.cuda.is_available() else "cpu"
+)
+
 classifier = ImageClassifier().to(device)
 
 
-# Define the optimizer and loss function
-optimizer = Adam(classifier.parameters(), lr=0.001)
+# ============================================================
+# OPTIMIZADOR Y FUNCIÓN DE PÉRDIDA
+# ============================================================
+
+optimizer = Adam(
+    classifier.parameters(),
+    lr=LEARNING_RATE
+)
+
 loss_fn = nn.CrossEntropyLoss()
 
-# Train the model
-for epoch in range(10):  # Train for 10 epochs
+
+# ============================================================
+# ENTRENAMIENTO
+# ============================================================
+
+for epoch in range(N_EPOCHS):
+
     for images, labels in train_loader:
-        images, labels = images.to(device), labels.to(device)
-        optimizer.zero_grad()  # Reset gradients
-        outputs = classifier(images)  # Forward pass
-        loss = loss_fn(outputs, labels)  # Compute loss
-        loss.backward()  # Backward pass
-        optimizer.step()  # Update weights
 
-    print(f"Epoch:{epoch} loss is {loss.item()}")
+        images = images.to(device)
+        labels = labels.to(device)
+
+        optimizer.zero_grad()
+
+        outputs = classifier(images)
+
+        loss = loss_fn(outputs, labels)
+
+        loss.backward()
+
+        optimizer.step()
+
+    print(f"Epoch: {epoch} | Loss: {loss.item()}")
 
 
-# Save the trained model
-torch.save(classifier.state_dict(), 'model_state.pt')
+# ============================================================
+# GUARDAR MODELO
+# ============================================================
+
+torch.save(
+    classifier.state_dict(),
+    "model_state.pt"
+)
 
 
-# Load the saved model
-with open('model_state.pt', 'rb') as f: 
-     classifier.load_state_dict(load(f))  
-       
+# ============================================================
+# CARGAR MODELO
+# ============================================================
 
-# Perform inference on an image
-from PIL import Image
+with open("model_state.pt", "rb") as f:
+    classifier.load_state_dict(load(f))
+
+
+# ============================================================
+# INFERENCIA SOBRE UNA IMAGEN
+# ============================================================
+
 img = Image.open("image.jpg").convert("RGB")
+
 img_transform = transforms.Compose([
-   transforms.Resize((512, 512)),
-   transforms.ToTensor()
+    transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+    transforms.ToTensor()
 ])
+
 img_tensor = img_transform(img).unsqueeze(0).to(device)
+
 output = classifier(img_tensor)
+
 predicted_label = torch.argmax(output)
+
 print(f"Predicted label: {predicted_label}")
-
-
